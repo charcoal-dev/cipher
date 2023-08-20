@@ -35,7 +35,7 @@ class SerializedContainer
         $this->type = gettype($data);
         $this->data = match ($this->type) {
             "integer", "double", "string" => $data,
-            "array", "object" => base64_encode(serialize($data)),
+            "array", "object" => serialize($data),
             default => throw new CipherException(
                 CipherError::INVALID_VALUE_TYPE,
                 sprintf('Cannot encrypt value of type "%s"', $this->type),
@@ -78,7 +78,7 @@ class SerializedContainer
                 return $this->data;
             case "array":
             case "object":
-                $obj = unserialize(base64_decode($this->data), ["allowed_classes" => $allowedClasses ?? true]);
+                $obj = unserialize($this->data, ["allowed_classes" => $allowedClasses ?? true]);
                 if ($obj === false || gettype($obj) !== $this->type) {
                     throw new CipherException(CipherError::RETRIEVE_STORED_VALUE_TYPE, data: [$this->type, gettype($obj)]);
                 }
