@@ -71,10 +71,9 @@ class Cipher
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
         $iv = Bytes16::fromRandomBytes();
         $mode = $mode ?? $this->defaultMode;
-        $cipher = $mode->openSSLCipherAlgo($this->keyBitLen);
         $encrypted = openssl_encrypt(
             serialize(new SerializedContainer($value)),
-            $cipher,
+            $mode->openSSLCipherAlgo($this->keyBitLen),
             $this->keyBytes,
             $options,
             $iv->raw(),
@@ -86,9 +85,19 @@ class Cipher
             throw new CipherException(CipherError::ENCRYPTION_OP_FAIL);
         }
 
-        return new Encrypted(
-            $cipher, (new Buffer($encrypted))->readOnly(), $iv, $zeroPadding, isset($tag) ? new Bytes16($tag) : null
-        );
+        return new Encrypted((new Buffer($encrypted))->readOnly(), $iv, isset($tag) ? new Bytes16($tag) : null);
+    }
+
+    /**
+     * @param mixed $value
+     * @param \Charcoal\Cipher\CipherMethod|null $mode
+     * @param bool $zeroPadding
+     * @return \Charcoal\Buffers\Buffer
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
+    public function encryptSerialize(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false): Buffer
+    {
+        return $this->encrypt($value, $mode, $zeroPadding)->serialize();
     }
 
     /**
@@ -134,5 +143,22 @@ class Cipher
         }
 
         return $object->getValue($allowedClasses);
+    }
+
+    /**
+     * @param \Charcoal\Buffers\Buffer|\Charcoal\Cipher\Encrypted $buffer
+     * @param \Charcoal\Cipher\CipherMethod|null $mode
+     * @param bool $zeroPadding
+     * @return mixed
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
+    public function decryptSerialized(Buffer|Encrypted $buffer, ?CipherMethod $mode = null, bool $zeroPadding = false): mixed
+    {
+        $mode = $mode ?? $this->defaultMode;
+        if (!$buffer instanceof Encrypted) {
+            $buffer = Encrypted::Unserialize($buffer, $mode->requiresTag());
+        }
+
+        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding);
     }
 }
