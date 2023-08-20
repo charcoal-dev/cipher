@@ -149,16 +149,21 @@ class Cipher
      * @param \Charcoal\Buffers\Buffer|\Charcoal\Cipher\Encrypted $buffer
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool $zeroPadding
+     * @param array|null $allowedClasses
      * @return mixed
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
-    public function decryptSerialized(Buffer|Encrypted $buffer, ?CipherMethod $mode = null, bool $zeroPadding = false): mixed
+    public function decryptSerialized(
+        Buffer|Encrypted $buffer,
+        ?CipherMethod    $mode = null,
+        bool             $zeroPadding = false,
+        ?array           $allowedClasses = null): mixed
     {
         $mode = $mode ?? $this->defaultMode;
         if (!$buffer instanceof Encrypted) {
             $buffer = Encrypted::Unserialize($buffer, $mode->requiresTag());
         }
 
-        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding);
+        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding, $allowedClasses);
     }
 }
