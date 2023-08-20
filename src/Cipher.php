@@ -14,8 +14,10 @@ declare(strict_types=1);
 
 namespace Charcoal\Cipher;
 
+use Charcoal\Buffers\AbstractByteArray;
 use Charcoal\Buffers\Buffer;
 use Charcoal\Buffers\Frames\Bytes16;
+use Charcoal\Buffers\Frames\Bytes20;
 use Charcoal\Buffers\Frames\Bytes32;
 use Charcoal\Cipher\Exception\CipherError;
 use Charcoal\Cipher\Exception\CipherException;
@@ -27,7 +29,7 @@ use Charcoal\Cipher\Exception\CipherException;
 class Cipher
 {
     private string $keyBytes;
-    private readonly int $keyBitLen;
+    public readonly int $keyBitLen;
 
     /**
      * @param \Charcoal\Buffers\Frames\Bytes16|\Charcoal\Buffers\Frames\Bytes32 $key
@@ -38,8 +40,8 @@ class Cipher
         public CipherMethod $defaultMode = CipherMethod::CBC,
     )
     {
-        $this->keyBitLen = $key->len() * 8;
         $this->keyBytes = $key->raw();
+        $this->keyBitLen = strlen($this->keyBytes) * 8;
     }
 
     /**
@@ -54,9 +56,57 @@ class Cipher
      * @param array $in
      * @return object
      */
-    final public function __set_state(array $in): object
+    final public static function __set_state(array $in): object
     {
         throw new \BadMethodCallException(get_called_class() . ' instance cannot be exported');
+    }
+
+    /**
+     * @param string|\Charcoal\Buffers\AbstractByteArray $salt
+     * @param int $iterations
+     * @return $this
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
+    public function deriveChildKey(string|AbstractByteArray $salt, int $iterations): static
+    {
+        $algo = match ($this->keyBitLen) {
+            256 => "sha256",
+            128 => "sha1"
+        };
+
+        /** @var Bytes16|Bytes32 $child */
+        $child = $this->pbkdf2($algo, $salt instanceof AbstractByteArray ? $salt->raw() : $salt, $iterations);
+        return new static($child);
+    }
+
+    /**
+     * @param string $maskingKey
+     * @return $this
+     */
+    public function deriveMaskedKey(string $maskingKey): static
+    {
+        $maskBytes = [];
+        $maskBytesCount = 0;
+        for ($i = 0; $i < strlen($maskingKey); $i++) {
+            $maskBytes[] = ord($maskingKey[$i]);
+            $maskBytesCount++;
+        }
+
+        if ($maskBytesCount < 0) {
+            throw new \LengthException('Masking key is too small');
+        }
+
+        $masked = "";
+        for ($i = 0; $i < strlen($this->keyBytes); $i++) {
+            $masked .= chr(ord($this->keyBytes[$i]) ^ $maskBytes[$i % $maskBytesCount]);
+        }
+
+        $frame = match ($this->keyBitLen) {
+            256 => Bytes32::class,
+            128 => Bytes16::class
+        };
+
+        return new static(new $frame(substr($masked, -1 * $frame::SIZE)));
     }
 
     /**
@@ -165,5 +215,66 @@ class Cipher
         }
 
         return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding, $allowedClasses);
+    }
+
+    /**
+     * @param string $algo
+     * @param string|\Charcoal\Buffers\AbstractByteArray $data
+     * @return \Charcoal\Buffers\AbstractByteArray
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
+    public function hmac(string $algo, string|AbstractByteArray $data): AbstractByteArray
+    {
+        try {
+            return $this->digestResultFrame(
+                $algo,
+                hash_hmac($algo, $data instanceof AbstractByteArray ? $data->raw() : $data, $this->keyBytes, true)
+            );
+        } catch (\Exception) {
+            throw new CipherException(CipherError::HMAC_COMPUTE_FAIL);
+        }
+    }
+
+    /**
+     * @param string $algo
+     * @param string|\Charcoal\Buffers\AbstractByteArray $data
+     * @param int $iterations
+     * @return \Charcoal\Buffers\AbstractByteArray
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
+    public function pbkdf2(string $algo, string|AbstractByteArray $data, int $iterations): AbstractByteArray
+    {
+        try {
+            return $this->digestResultFrame(
+                $algo,
+                hash_pbkdf2(
+                    $algo,
+                    $data instanceof AbstractByteArray ? $data->raw() : $data,
+                    $this->keyBytes,
+                    $iterations,
+                    0,
+                    true
+                )
+            );
+        } catch (\Exception) {
+            throw new CipherException(CipherError::PBKDF2_COMPUTE_FAIL);
+        }
+    }
+
+    /**
+     * @param string $algo
+     * @param string $raw
+     * @return \Charcoal\Buffers\AbstractByteArray
+     */
+    private function digestResultFrame(string $algo, string $raw): AbstractByteArray
+    {
+        $class = match (strtolower($algo)) {
+            "md5" => Bytes16::class,
+            "sha1", "ripemd160" => Bytes20::class,
+            "sha256" => Bytes32::class,
+            default => Buffer::class,
+        };
+
+        return new $class($raw);
     }
 }
