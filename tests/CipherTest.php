@@ -148,4 +148,33 @@ class CipherTest extends \PHPUnit\Framework\TestCase
         $model5 = $cipher->decryptSerialized($encrypted, allowedClasses: [CustomUserModel::class]);
         unset($model5);
     }
+
+    /**
+     * @return void
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
+    public function testChildKeyDerivation(): void
+    {
+        $cipher = new \Charcoal\Cipher\Cipher(new \Charcoal\Buffers\Frames\Bytes32(hash("sha256", "charcoal", true)));
+        $childKey1 = $cipher->deriveChildKey("some_deterministic_salt", 1500);
+        $childKey2 = $cipher->deriveChildKey("some_deterministic_salt", 1501);
+        $childKey3 = $cipher->deriveChildKey("some_deterministic", 1);
+
+        $this->assertNotEquals($childKey1->getPrivateKeyBytes(), $childKey2->getPrivateKeyBytes());
+        $this->assertNotEquals($childKey2->getPrivateKeyBytes(), $childKey3->getPrivateKeyBytes());
+        $this->assertEquals($cipher->deriveChildKey("some_deterministic_salt", 1500)->getPrivateKeyBytes(), $childKey1->getPrivateKeyBytes());
+    }
+
+    /**
+     * @return void
+     */
+    public function testMaskedKeyDerivation(): void
+    {
+        $cipher = new \Charcoal\Cipher\Cipher(new \Charcoal\Buffers\Frames\Bytes32(hash("sha256", "charcoal", true)));
+        $masked1 = $cipher->deriveMaskedKey("some-test-salt");
+        $masked2 = $cipher->deriveMaskedKey("another");
+        $this->assertNotEquals($cipher->getPrivateKeyBytes(), $masked1->getPrivateKeyBytes());
+        $this->assertNotEquals($masked1->getPrivateKeyBytes(), $masked2->getPrivateKeyBytes());
+        $this->assertEquals($cipher->getPrivateKeyBytes(), $masked1->deriveMaskedKey("some-test-salt")->getPrivateKeyBytes());
+    }
 }
