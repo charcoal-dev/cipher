@@ -90,6 +90,7 @@ class Cipher
     /**
      * @param string $maskingKey
      * @return $this
+     * @throws \Charcoal\Cipher\Exception\CipherException
      */
     public function deriveMaskedKey(string $maskingKey): static
     {
@@ -100,8 +101,8 @@ class Cipher
             $maskBytesCount++;
         }
 
-        if ($maskBytesCount < 0) {
-            throw new \LengthException('Masking key is too small');
+        if ($maskBytesCount < 4) {
+            throw new CipherException(CipherError::BAD_MASKING_KEY);
         }
 
         $masked = "";

@@ -28,5 +28,6 @@ enum CipherError: int
     case RETRIEVE_STORED_VALUE_TYPE = 0x258;
     case INCOMPLETE_SERIALIZED_BUFFER = 0x2bc;
     case HMAC_COMPUTE_FAIL = 0x320;
-    case PBKDF2_COMPUTE_FAIL = 0x38d;
+    case PBKDF2_COMPUTE_FAIL = 0x384;
+    case BAD_MASKING_KEY = 0x3e8;
 }
