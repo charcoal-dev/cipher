@@ -62,6 +62,14 @@ class Cipher
     }
 
     /**
+     * @return string
+     */
+    public function getPrivateKeyBytes(): string
+    {
+        return $this->keyBytes;
+    }
+
+    /**
      * @param string|\Charcoal\Buffers\AbstractByteArray $salt
      * @param int $iterations
      * @return $this
