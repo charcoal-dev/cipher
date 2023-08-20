@@ -1,2 +1,10 @@
-# cipher
-AES Encryptions lib for Charcoal Apps
+# Charcoal Cipher
+
+Charcoal Cipher library leverages the OpenSSL extension, offering a concise API for encryption using both 128 and
+256-bit keys, encompassing modes like CBC and GCM. The library seamlessly handles serialization when necessary, such as
+for objects or arrays, ensuring that encrypting complex custom models is a straightforward process.
+
+For detailed information, guidance, and setup instructions regarding this library, please refer to our official
+documentation website:
+
+[https://charcoal.dev/docs/cipher](https://charcoal.dev/docs/cipher)
