@@ -167,6 +167,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
+     * @throws \Charcoal\Cipher\Exception\CipherException
      */
     public function testMaskedKeyDerivation(): void
     {
