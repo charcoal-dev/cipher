@@ -62,6 +62,7 @@ class Cipher
     }
 
     /**
+     * Returns private key bytes set in Cipher instance
      * @return string
      */
     public function getPrivateKeyBytes(): string
@@ -70,6 +71,7 @@ class Cipher
     }
 
     /**
+     * Derives a child key using PBKDF2, Always use a strong salt
      * @param string|\Charcoal\Buffers\AbstractByteArray $salt
      * @param int $iterations
      * @return $this
@@ -88,6 +90,7 @@ class Cipher
     }
 
     /**
+     * This is experimental method to generate child key by using XOR masking key method
      * @param string $maskingKey
      * @return $this
      * @throws \Charcoal\Cipher\Exception\CipherException
@@ -119,6 +122,7 @@ class Cipher
     }
 
     /**
+     * Encrypts given value and returns instance of Encrypted
      * @param mixed $value
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool|null $zeroPadding
@@ -148,6 +152,7 @@ class Cipher
     }
 
     /**
+     * Returns serialized buffer directly by calling encrypt method above and then invoking its serialize method
      * @param mixed $value
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool $zeroPadding
@@ -160,6 +165,7 @@ class Cipher
     }
 
     /**
+     * Decrypts encrypted bytes
      * @param \Charcoal\Buffers\Buffer $encrypted
      * @param \Charcoal\Buffers\Frames\Bytes16 $iv
      * @param \Charcoal\Buffers\Frames\Bytes16|null $tag
@@ -205,6 +211,7 @@ class Cipher
     }
 
     /**
+     * Same as "decrypt" method but can accept instance of Encrypted as well
      * @param \Charcoal\Buffers\Buffer|\Charcoal\Cipher\Encrypted $buffer
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool $zeroPadding
@@ -216,7 +223,8 @@ class Cipher
         Buffer|Encrypted $buffer,
         ?CipherMethod    $mode = null,
         bool             $zeroPadding = false,
-        ?array           $allowedClasses = null): mixed
+        ?array           $allowedClasses = null
+    ): mixed
     {
         $mode = $mode ?? $this->defaultMode;
         if (!$buffer instanceof Encrypted) {
@@ -227,6 +235,7 @@ class Cipher
     }
 
     /**
+     * Returns computed HMAC digest
      * @param string $algo
      * @param string|\Charcoal\Buffers\AbstractByteArray $data
      * @return \Charcoal\Buffers\AbstractByteArray
@@ -245,6 +254,7 @@ class Cipher
     }
 
     /**
+     * Calculates the PBKDF2 hash for the given data argument.
      * @param string $algo
      * @param string|\Charcoal\Buffers\AbstractByteArray $data
      * @param int $iterations
