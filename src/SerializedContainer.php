@@ -24,7 +24,7 @@ use Charcoal\Cipher\Exception\CipherException;
 class SerializedContainer
 {
     public readonly string $type;
-    private string $data;
+    private string|int|float $data;
 
     /**
      * @param mixed $data
@@ -42,6 +42,18 @@ class SerializedContainer
                 [$this->type]
             ),
         };
+    }
+
+    /**
+     * @return int|null
+     */
+    public function findLength(): ?int
+    {
+        if (is_string($this->data)) {
+            return strlen($this->data);
+        }
+
+        return null;
     }
 
     /**

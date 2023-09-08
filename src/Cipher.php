@@ -135,7 +135,7 @@ class Cipher
         $iv = Bytes16::fromRandomBytes();
         $mode = $mode ?? $this->defaultMode;
         $encrypted = openssl_encrypt(
-            serialize(new SerializedContainer($value)),
+            serialize($value instanceof SerializedContainer ? $value : new SerializedContainer($value)),
             $mode->openSSLCipherAlgo($this->keyBitLen),
             $this->keyBytes,
             $options,
