@@ -126,16 +126,22 @@ class Cipher
      * @param mixed $value
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool|null $zeroPadding
+     * @param bool $plainString
      * @return \Charcoal\Cipher\Encrypted
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
-    public function encrypt(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false): Encrypted
+    public function encrypt(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false, bool $plainString = false): Encrypted
     {
+        if ($plainString && !is_string($value)) {
+            throw new \InvalidArgumentException('Subject must be of type string when encrypting with plainString flag');
+        }
+
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
         $iv = Bytes16::fromRandomBytes();
         $mode = $mode ?? $this->defaultMode;
+        $subject = $plainString ? $value : serialize($value instanceof SerializedContainer ? $value : new SerializedContainer($value));
         $encrypted = openssl_encrypt(
-            serialize($value instanceof SerializedContainer ? $value : new SerializedContainer($value)),
+            $subject,
             $mode->openSSLCipherAlgo($this->keyBitLen),
             $this->keyBytes,
             $options,
@@ -171,6 +177,7 @@ class Cipher
      * @param \Charcoal\Buffers\Frames\Bytes16|null $tag
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool $zeroPadding
+     * @param bool $plainString
      * @param array|null $allowedClasses
      * @return mixed
      * @throws \Charcoal\Cipher\Exception\CipherException
@@ -181,6 +188,7 @@ class Cipher
         ?Bytes16      $tag = null,
         ?CipherMethod $mode = null,
         bool          $zeroPadding = false,
+        bool          $plainString = false,
         ?array        $allowedClasses = null,
     ): mixed
     {
@@ -202,6 +210,10 @@ class Cipher
             throw new CipherException(CipherError::DECRYPTION_OP_FAIL);
         }
 
+        if ($plainString) {
+            return $decrypted;
+        }
+
         $object = unserialize($decrypted, ["allowed_classes" => [SerializedContainer::class]]);
         if (!$object instanceof SerializedContainer) {
             throw new CipherException(CipherError::RESTORE_SERIALIZED_CONTAINER);
@@ -215,6 +227,7 @@ class Cipher
      * @param \Charcoal\Buffers\Buffer|\Charcoal\Cipher\Encrypted $buffer
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool $zeroPadding
+     * @param bool $plainString
      * @param array|null $allowedClasses
      * @return mixed
      * @throws \Charcoal\Cipher\Exception\CipherException
@@ -223,6 +236,7 @@ class Cipher
         Buffer|Encrypted $buffer,
         ?CipherMethod    $mode = null,
         bool             $zeroPadding = false,
+        bool             $plainString = false,
         ?array           $allowedClasses = null
     ): mixed
     {
@@ -231,7 +245,7 @@ class Cipher
             $buffer = Encrypted::Unserialize($buffer, $mode->requiresTag());
         }
 
-        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding, $allowedClasses);
+        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding, $plainString, $allowedClasses);
     }
 
     /**

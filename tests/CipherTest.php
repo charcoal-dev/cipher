@@ -73,6 +73,26 @@ class CipherTest extends \PHPUnit\Framework\TestCase
      * @return void
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
+    public function testGcmPlainString(): void
+    {
+        $cipher = new \Charcoal\Cipher\Cipher(
+            \Charcoal\Buffers\Frames\Bytes32P::fromBase16("63686172636f616c"),
+            \Charcoal\Cipher\CipherMethod::GCM
+        );
+
+        $subject = "1234567890abcdef0987654321";
+        $plainEncrypt = $cipher->encrypt($subject, plainString: true);
+        $this->assertEquals(26, $plainEncrypt->bytes->len());
+        $this->assertInstanceOf(\Charcoal\Buffers\Frames\Bytes16::class, $plainEncrypt->tag);
+        $this->assertInstanceOf(\Charcoal\Buffers\Frames\Bytes16::class, $plainEncrypt->iv);
+
+        $this->assertEquals($subject, $cipher->decryptSerialized($plainEncrypt, plainString: true));
+    }
+
+    /**
+     * @return void
+     * @throws \Charcoal\Cipher\Exception\CipherException
+     */
     public function testSerialization1(): void
     {
         $cipher = new \Charcoal\Cipher\Cipher(
