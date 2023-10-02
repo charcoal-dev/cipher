@@ -132,16 +132,12 @@ class Cipher
      */
     public function encrypt(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false, bool $plainString = false): Encrypted
     {
-        if ($plainString && !is_string($value)) {
-            throw new \InvalidArgumentException('Subject must be of type string when encrypting with plainString flag');
-        }
-
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
         $iv = Bytes16::fromRandomBytes();
         $mode = $mode ?? $this->defaultMode;
-        $subject = $plainString ? $value : serialize($value instanceof SerializedContainer ? $value : new SerializedContainer($value));
+        $value = $plainString ? $value : serialize($value instanceof SerializedContainer ? $value : new SerializedContainer($value));
         $encrypted = openssl_encrypt(
-            $subject,
+            $value,
             $mode->openSSLCipherAlgo($this->keyBitLen),
             $this->keyBytes,
             $options,
@@ -162,12 +158,13 @@ class Cipher
      * @param mixed $value
      * @param \Charcoal\Cipher\CipherMethod|null $mode
      * @param bool $zeroPadding
+     * @param bool $plainString
      * @return \Charcoal\Buffers\Buffer
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
-    public function encryptSerialize(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false): Buffer
+    public function encryptSerialize(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false, bool $plainString = false): Buffer
     {
-        return $this->encrypt($value, $mode, $zeroPadding)->serialize();
+        return $this->encrypt($value, $mode, $zeroPadding, $plainString)->serialize();
     }
 
     /**
