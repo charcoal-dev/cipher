@@ -180,13 +180,13 @@ class Cipher
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
     public function decrypt(
-        Buffer        $encrypted,
-        Bytes16       $iv,
-        ?Bytes16      $tag = null,
-        ?CipherMethod $mode = null,
-        bool          $zeroPadding = false,
-        bool          $plainString = false,
-        ?array        $allowedClasses = null,
+        AbstractByteArray $encrypted,
+        Bytes16           $iv,
+        ?Bytes16          $tag = null,
+        ?CipherMethod     $mode = null,
+        bool              $zeroPadding = false,
+        bool              $plainString = false,
+        ?array            $allowedClasses = null,
     ): mixed
     {
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
@@ -230,11 +230,11 @@ class Cipher
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
     public function decryptSerialized(
-        Buffer|Encrypted $buffer,
-        ?CipherMethod    $mode = null,
-        bool             $zeroPadding = false,
-        bool             $plainString = false,
-        ?array           $allowedClasses = null
+        AbstractByteArray|Encrypted $buffer,
+        ?CipherMethod               $mode = null,
+        bool                        $zeroPadding = false,
+        bool                        $plainString = false,
+        ?array                      $allowedClasses = null
     ): mixed
     {
         $mode = $mode ?? $this->defaultMode;

@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Charcoal\Cipher;
 
+use Charcoal\Buffers\AbstractByteArray;
 use Charcoal\Buffers\Buffer;
 use Charcoal\Buffers\Frames\Bytes16;
 use Charcoal\Cipher\Exception\CipherError;
@@ -33,7 +34,7 @@ class Encrypted
      * @return static
      * @throws \Charcoal\Cipher\Exception\CipherException
      */
-    public static function Unserialize(Buffer $buffer, bool $hasTag): static
+    public static function Unserialize(AbstractByteArray $buffer, bool $hasTag): static
     {
         try {
             $buffer = $buffer->read();
