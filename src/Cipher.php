@@ -1,13 +1,7 @@
 <?php
-/*
- * This file is a part of "charcoal-dev/cipher" package.
- * https://github.com/charcoal-dev/cipher
- *
- * Copyright (c) Furqan A. Siddiqui <hello@furqansiddiqui.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code or visit following link:
- * https://github.com/charcoal-dev/cipher/blob/master/LICENSE
+/**
+ * Part of the "charcoal-dev/cipher" package.
+ * @link https://github.com/charcoal-dev/cipher
  */
 
 declare(strict_types=1);
@@ -28,20 +22,20 @@ use Charcoal\Cipher\Exception\CipherException;
  */
 class Cipher
 {
-    private string $keyBytes;
-    public readonly int $keyBitLen;
+    private string $entropy;
+    public readonly int $bitLen;
 
     /**
-     * @param \Charcoal\Buffers\Frames\Bytes16|\Charcoal\Buffers\Frames\Bytes32 $key
-     * @param \Charcoal\Cipher\CipherMethod $defaultMode
+     * @param Bytes16|Bytes32 $key
+     * @param CipherMode $mode
      */
     public function __construct(
-        Bytes16|Bytes32     $key,
-        public CipherMethod $defaultMode = CipherMethod::CBC,
+        Bytes16|Bytes32   $key,
+        public CipherMode $mode = CipherMode::CBC,
     )
     {
-        $this->keyBytes = $key->raw();
-        $this->keyBitLen = strlen($this->keyBytes) * 8;
+        $this->entropy = $key->raw();
+        $this->bitLen = strlen($this->entropy) * 8;
     }
 
     /**
@@ -49,7 +43,7 @@ class Cipher
      */
     final public function __debugInfo(): array
     {
-        return [$this->keyBitLen . "-bit Cipher Key"];
+        return [$this->bitLen . "-bit Cipher Key"];
     }
 
     /**
@@ -62,24 +56,19 @@ class Cipher
     }
 
     /**
-     * Returns private key bytes set in Cipher instance
      * @return string
      */
     public function getPrivateKeyBytes(): string
     {
-        return $this->keyBytes;
+        return $this->entropy;
     }
 
     /**
-     * Derives a child key using PBKDF2, Always use a strong salt
-     * @param string|\Charcoal\Buffers\AbstractByteArray $salt
-     * @param int $iterations
-     * @return $this
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function deriveChildKey(string|AbstractByteArray $salt, int $iterations): static
     {
-        $algo = match ($this->keyBitLen) {
+        $algo = match ($this->bitLen) {
             256 => "sha256",
             128 => "sha1"
         };
@@ -90,10 +79,7 @@ class Cipher
     }
 
     /**
-     * This is experimental method to generate child key by using XOR masking key method
-     * @param string $maskingKey
-     * @return $this
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function deriveMaskedKey(string $maskingKey): static
     {
@@ -109,11 +95,11 @@ class Cipher
         }
 
         $masked = "";
-        for ($i = 0; $i < strlen($this->keyBytes); $i++) {
-            $masked .= chr(ord($this->keyBytes[$i]) ^ $maskBytes[$i % $maskBytesCount]);
+        for ($i = 0; $i < strlen($this->entropy); $i++) {
+            $masked .= chr(ord($this->entropy[$i]) ^ $maskBytes[$i % $maskBytesCount]);
         }
 
-        $frame = match ($this->keyBitLen) {
+        $frame = match ($this->bitLen) {
             256 => Bytes32::class,
             128 => Bytes16::class
         };
@@ -122,24 +108,24 @@ class Cipher
     }
 
     /**
-     * Encrypts given value and returns instance of Encrypted
-     * @param mixed $value
-     * @param \Charcoal\Cipher\CipherMethod|null $mode
-     * @param bool|null $zeroPadding
-     * @param bool $plainString
-     * @return \Charcoal\Cipher\Encrypted
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
-    public function encrypt(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false, bool $plainString = false): Encrypted
+    public function encrypt(
+        mixed       $value,
+        ?CipherMode $mode = null,
+        bool        $zeroPadding = false,
+        bool        $plainString = false
+    ): EncryptedEntity
     {
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
         $iv = Bytes16::fromRandomBytes();
-        $mode = $mode ?? $this->defaultMode;
-        $value = $plainString ? $value : serialize($value instanceof SerializedContainer ? $value : new SerializedContainer($value));
+        $mode = $mode ?? $this->mode;
+        $value = $plainString ? $value : serialize($value instanceof SerializedContainer ?
+            $value : new SerializedContainer($value));
         $encrypted = openssl_encrypt(
             $value,
-            $mode->openSSLCipherAlgo($this->keyBitLen),
-            $this->keyBytes,
+            $mode->getCipherAlgo($this->bitLen),
+            $this->entropy,
             $options,
             $iv->raw(),
             $tag,
@@ -150,55 +136,47 @@ class Cipher
             throw new CipherException(CipherError::ENCRYPTION_OP_FAIL);
         }
 
-        return new Encrypted((new Buffer($encrypted))->readOnly(), $iv, isset($tag) ? new Bytes16($tag) : null);
+        return new EncryptedEntity((new Buffer($encrypted))->readOnly(), $iv,
+            isset($tag) ? new Bytes16($tag) : null);
     }
 
     /**
-     * Returns serialized buffer directly by calling encrypt method above and then invoking its serialize method
-     * @param mixed $value
-     * @param \Charcoal\Cipher\CipherMethod|null $mode
-     * @param bool $zeroPadding
-     * @param bool $plainString
-     * @return \Charcoal\Buffers\Buffer
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
-    public function encryptSerialize(mixed $value, ?CipherMethod $mode = null, bool $zeroPadding = false, bool $plainString = false): Buffer
+    public function encryptSerialize(
+        mixed       $value,
+        ?CipherMode $mode = null,
+        bool        $zeroPadding = false,
+        bool        $plainString = false
+    ): Buffer
     {
-        return $this->encrypt($value, $mode, $zeroPadding, $plainString)->serialize();
+        return $this->encrypt($value, $mode, $zeroPadding, $plainString)
+            ->serialize();
     }
 
     /**
-     * Decrypts encrypted bytes
-     * @param \Charcoal\Buffers\Buffer $encrypted
-     * @param \Charcoal\Buffers\Frames\Bytes16 $iv
-     * @param \Charcoal\Buffers\Frames\Bytes16|null $tag
-     * @param \Charcoal\Cipher\CipherMethod|null $mode
-     * @param bool $zeroPadding
-     * @param bool $plainString
-     * @param array|null $allowedClasses
-     * @return mixed
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function decrypt(
         AbstractByteArray $encrypted,
         Bytes16           $iv,
         ?Bytes16          $tag = null,
-        ?CipherMethod     $mode = null,
+        ?CipherMode       $mode = null,
         bool              $zeroPadding = false,
         bool              $plainString = false,
         ?array            $allowedClasses = null,
     ): mixed
     {
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
-        $mode = $mode ?? $this->defaultMode;
+        $mode = $mode ?? $this->mode;
         if (!$tag && $mode->requiresTag()) {
             throw new CipherException(CipherError::TAG_REQUIRED);
         }
 
         $decrypted = openssl_decrypt(
             $encrypted->raw(),
-            $mode->openSSLCipherAlgo($this->keyBitLen),
-            $this->keyBytes,
+            $mode->getCipherAlgo($this->bitLen),
+            $this->entropy,
             $options,
             $iv->raw(),
             $tag?->raw(),
@@ -220,44 +198,35 @@ class Cipher
     }
 
     /**
-     * Same as "decrypt" method but can accept instance of Encrypted as well
-     * @param \Charcoal\Buffers\Buffer|\Charcoal\Cipher\Encrypted $buffer
-     * @param \Charcoal\Cipher\CipherMethod|null $mode
-     * @param bool $zeroPadding
-     * @param bool $plainString
-     * @param array|null $allowedClasses
-     * @return mixed
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function decryptSerialized(
-        AbstractByteArray|Encrypted $buffer,
-        ?CipherMethod               $mode = null,
-        bool                        $zeroPadding = false,
-        bool                        $plainString = false,
-        ?array                      $allowedClasses = null
+        AbstractByteArray|EncryptedEntity $buffer,
+        ?CipherMode                       $mode = null,
+        bool                              $zeroPadding = false,
+        bool                              $plainString = false,
+        ?array                            $allowedClasses = null
     ): mixed
     {
-        $mode = $mode ?? $this->defaultMode;
-        if (!$buffer instanceof Encrypted) {
-            $buffer = Encrypted::Unserialize($buffer, $mode->requiresTag());
+        $mode = $mode ?? $this->mode;
+        if (!$buffer instanceof EncryptedEntity) {
+            $buffer = EncryptedEntity::Unserialize($buffer, $mode->requiresTag());
         }
 
-        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag, $mode, $zeroPadding, $plainString, $allowedClasses);
+        return $this->decrypt($buffer->bytes, $buffer->iv, $buffer->tag,
+            $mode, $zeroPadding, $plainString, $allowedClasses);
     }
 
     /**
-     * Returns computed HMAC digest
-     * @param string $algo
-     * @param string|\Charcoal\Buffers\AbstractByteArray $data
-     * @return \Charcoal\Buffers\AbstractByteArray
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function hmac(string $algo, string|AbstractByteArray $data): AbstractByteArray
     {
         try {
             return $this->digestResultFrame(
                 $algo,
-                hash_hmac($algo, $data instanceof AbstractByteArray ? $data->raw() : $data, $this->keyBytes, true)
+                hash_hmac($algo, $data instanceof AbstractByteArray ?
+                    $data->raw() : $data, $this->entropy, true)
             );
         } catch (\Exception) {
             throw new CipherException(CipherError::HMAC_COMPUTE_FAIL);
@@ -265,12 +234,7 @@ class Cipher
     }
 
     /**
-     * Calculates the PBKDF2 hash for the given data argument.
-     * @param string $algo
-     * @param string|\Charcoal\Buffers\AbstractByteArray $data
-     * @param int $iterations
-     * @return \Charcoal\Buffers\AbstractByteArray
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function pbkdf2(string $algo, string|AbstractByteArray $data, int $iterations): AbstractByteArray
     {
@@ -280,7 +244,7 @@ class Cipher
                 hash_pbkdf2(
                     $algo,
                     $data instanceof AbstractByteArray ? $data->raw() : $data,
-                    $this->keyBytes,
+                    $this->entropy,
                     $iterations,
                     0,
                     true
@@ -294,7 +258,7 @@ class Cipher
     /**
      * @param string $algo
      * @param string $raw
-     * @return \Charcoal\Buffers\AbstractByteArray
+     * @return AbstractByteArray
      */
     private function digestResultFrame(string $algo, string $raw): AbstractByteArray
     {

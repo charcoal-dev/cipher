@@ -1,13 +1,7 @@
 <?php
-/*
- * This file is a part of "charcoal-dev/cipher" package.
- * https://github.com/charcoal-dev/cipher
- *
- * Copyright (c) Furqan A. Siddiqui <hello@furqansiddiqui.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code or visit following link:
- * https://github.com/charcoal-dev/cipher/blob/master/LICENSE
+/**
+ * Part of the "charcoal-dev/cipher" package.
+ * @link https://github.com/charcoal-dev/cipher
  */
 
 declare(strict_types=1);
@@ -24,15 +18,13 @@ use Charcoal\Cipher\Exception\CipherException;
  * Class Encrypted
  * @package Charcoal\Cipher
  */
-class Encrypted
+readonly class EncryptedEntity
 {
     /**
-     * Expecting serialized buffer in following order:
-     *  [IV][Ciphertext][Authentication Tag]
-     * @param \Charcoal\Buffers\Buffer $buffer
+     * @param AbstractByteArray $buffer [IV][Ciphertext][Authentication Tag]
      * @param bool $hasTag
      * @return static
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public static function Unserialize(AbstractByteArray $buffer, bool $hasTag): static
     {
@@ -51,21 +43,19 @@ class Encrypted
     }
 
     /**
-     * @param \Charcoal\Buffers\Buffer $bytes
-     * @param \Charcoal\Buffers\Frames\Bytes16 $iv
-     * @param \Charcoal\Buffers\Frames\Bytes16|null $tag
+     * @param Buffer $bytes
+     * @param Bytes16 $iv
+     * @param Bytes16|null $tag
      */
     public function __construct(
-        public readonly Buffer   $bytes,
-        public readonly Bytes16  $iv,
-        public readonly ?Bytes16 $tag = null,
+        public Buffer   $bytes,
+        public Bytes16  $iv,
+        public ?Bytes16 $tag = null,
     )
     {
     }
 
     /**
-     * Since there is any strict standard in existence, we are going to follow common practice of serializing
-     * encrypted entity in following order:
      * [IV][Ciphertext][Authentication Tag]
      * @return \Charcoal\Buffers\Buffer
      */

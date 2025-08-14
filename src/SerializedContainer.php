@@ -1,13 +1,7 @@
 <?php
-/*
- * This file is a part of "charcoal-dev/cipher" package.
- * https://github.com/charcoal-dev/cipher
- *
- * Copyright (c) Furqan A. Siddiqui <hello@furqansiddiqui.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code or visit following link:
- * https://github.com/charcoal-dev/cipher/blob/master/LICENSE
+/**
+ * Part of the "charcoal-dev/cipher" package.
+ * @link https://github.com/charcoal-dev/cipher
  */
 
 declare(strict_types=1);
@@ -28,7 +22,7 @@ class SerializedContainer
 
     /**
      * @param mixed $data
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function __construct(mixed $data)
     {
@@ -79,7 +73,7 @@ class SerializedContainer
     /**
      * @param array|null $allowedClasses
      * @return mixed
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws CipherException
      */
     public function getValue(?array $allowedClasses = null): mixed
     {
@@ -92,11 +86,13 @@ class SerializedContainer
             case "object":
                 $obj = unserialize($this->data, ["allowed_classes" => $allowedClasses ?? true]);
                 if ($obj === false || gettype($obj) !== $this->type) {
-                    throw new CipherException(CipherError::RETRIEVE_STORED_VALUE_TYPE, data: [$this->type, gettype($obj)]);
+                    throw new CipherException(CipherError::RETRIEVE_STORED_VALUE_TYPE,
+                        data: [$this->type, gettype($obj)]);
                 }
                 return $obj;
         }
 
-        throw new \UnexpectedValueException(sprintf('%s encountered value of type "%s"', __METHOD__, $this->type));
+        throw new \UnexpectedValueException(sprintf(
+            '%s encountered value of type "%s"', __METHOD__, $this->type));
     }
 }
