@@ -13,9 +13,10 @@
     }
   ],
   "require": {
-    "php": "^8.1",
+    "php": "^8.3",
     "ext-openssl": "*",
-    "charcoal-dev/buffers": "^0.1.0"
+    "charcoal-dev/base": ">=0.0.1 <0.1.0",
+    "charcoal-dev/buffers": "^0.2.1"
   },
   "autoload": {
     "psr-4": {
