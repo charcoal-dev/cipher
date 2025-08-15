@@ -9,4 +9,4 @@ for objects or arrays, ensuring that encrypting complex custom models is a strai
 For detailed information, guidance, and setup instructions regarding this library, please refer to our official
 documentation website:
 
-[https://charcoal.dev/docs/cipher](https://charcoal.dev/docs/cipher)
+[https://charcoal.dev/libs/cipher](https://charcoal.dev/libs/cipher)
