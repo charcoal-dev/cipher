@@ -13,8 +13,8 @@ use Charcoal\Buffers\Buffer;
 use Charcoal\Buffers\Frames\Bytes16;
 use Charcoal\Buffers\Frames\Bytes20;
 use Charcoal\Buffers\Frames\Bytes32;
-use Charcoal\Cipher\Exception\CipherError;
-use Charcoal\Cipher\Exception\CipherException;
+use Charcoal\Cipher\Exceptions\CipherError;
+use Charcoal\Cipher\Exceptions\CipherException;
 
 /**
  * Class Cipher

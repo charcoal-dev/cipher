@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\Cipher\Exception;
+namespace Charcoal\Cipher\Exceptions;
 
 /**
  * Class CipherError

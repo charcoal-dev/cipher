@@ -8,8 +8,8 @@ declare(strict_types=1);
 
 namespace Charcoal\Cipher;
 
-use Charcoal\Cipher\Exception\CipherError;
-use Charcoal\Cipher\Exception\CipherException;
+use Charcoal\Cipher\Exceptions\CipherError;
+use Charcoal\Cipher\Exceptions\CipherException;
 
 /**
  * Class SerializedContainer

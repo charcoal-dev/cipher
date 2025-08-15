@@ -47,7 +47,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testSelfCircularEncryption1(): void
     {
@@ -74,7 +74,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testGcmPlainString(): void
     {
@@ -94,7 +94,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testSerialization1(): void
     {
@@ -116,7 +116,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testSerializeAndAllowedClassesCBC(): void
     {
@@ -125,7 +125,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testSerializeAndAllowedClassesGCM(): void
     {
@@ -135,7 +135,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
     /**
      * @param CipherMode $mode
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     private function testSerializeAndAllowedClasses(CipherMode $mode): void
     {
@@ -174,7 +174,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testChildKeyDerivation(): void
     {
@@ -191,7 +191,7 @@ class CipherTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @return void
-     * @throws \Charcoal\Cipher\Exception\CipherException
+     * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function testMaskedKeyDerivation(): void
     {

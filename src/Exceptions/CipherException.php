@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\Cipher\Exception;
+namespace Charcoal\Cipher\Exceptions;
 
 /**
  * Class CipherException
@@ -15,7 +15,7 @@ namespace Charcoal\Cipher\Exception;
 class CipherException extends \Exception
 {
     /**
-     * @param \Charcoal\Cipher\Exception\CipherError $error
+     * @param \Charcoal\Cipher\Exceptions\CipherError $error
      * @param string $message
      * @param array $data
      * @param \Throwable|null $previous
