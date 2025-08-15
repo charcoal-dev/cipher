@@ -15,7 +15,7 @@
   "require": {
     "php": "^8.3",
     "ext-openssl": "*",
-    "charcoal-dev/base": ">=0.0.1 <0.1.0",
+    "charcoal-dev/base": ">=0.0.13 <0.1.0",
     "charcoal-dev/buffers": "^0.2.1"
   },
   "autoload": {
