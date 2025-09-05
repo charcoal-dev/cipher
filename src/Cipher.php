@@ -8,19 +8,20 @@ declare(strict_types=1);
 
 namespace Charcoal\Cipher;
 
-use Charcoal\Buffers\AbstractByteArray;
 use Charcoal\Buffers\Buffer;
-use Charcoal\Buffers\Frames\Bytes16;
-use Charcoal\Buffers\Frames\Bytes20;
-use Charcoal\Buffers\Frames\Bytes32;
+use Charcoal\Buffers\BufferImmutable;
+use Charcoal\Buffers\Types\Bytes16;
+use Charcoal\Buffers\Types\Bytes20;
+use Charcoal\Buffers\Types\Bytes32;
 use Charcoal\Cipher\Exceptions\CipherError;
 use Charcoal\Cipher\Exceptions\CipherException;
+use Charcoal\Contracts\Buffers\ReadableBufferInterface;
 
 /**
  * Class Cipher
  * @package Charcoal\Cipher
  */
-class Cipher
+class Cipher implements CipherInterface
 {
     private string $entropy;
     public readonly int $bitLen;
@@ -34,7 +35,7 @@ class Cipher
         public CipherMode $mode = CipherMode::CBC,
     )
     {
-        $this->entropy = $key->raw();
+        $this->entropy = $key->bytes();
         $this->bitLen = strlen($this->entropy) * 8;
     }
 
@@ -63,20 +64,7 @@ class Cipher
         return $this->entropy;
     }
 
-    /**
-     * @throws CipherException
-     */
-    public function deriveChildKey(string|AbstractByteArray $salt, int $iterations): static
-    {
-        $algo = match ($this->bitLen) {
-            256 => "sha256",
-            128 => "sha1"
-        };
 
-        /** @var Bytes16|Bytes32 $child */
-        $child = $this->pbkdf2($algo, $salt instanceof AbstractByteArray ? $salt->raw() : $salt, $iterations);
-        return new static($child);
-    }
 
     /**
      * @throws CipherException
@@ -118,7 +106,7 @@ class Cipher
     ): EncryptedEntity
     {
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
-        $iv = Bytes16::fromRandomBytes();
+        $iv = Bytes16::fromPrng();
         $mode = $mode ?? $this->mode;
         $value = $plainString ? $value : serialize($value instanceof SerializedContainer ?
             $value : new SerializedContainer($value));
@@ -127,7 +115,7 @@ class Cipher
             $mode->getCipherAlgo($this->bitLen),
             $this->entropy,
             $options,
-            $iv->raw(),
+            $iv->bytes(),
             $tag,
             tag_length: 16
         );
@@ -136,7 +124,7 @@ class Cipher
             throw new CipherException(CipherError::ENCRYPTION_OP_FAIL);
         }
 
-        return new EncryptedEntity((new Buffer($encrypted))->readOnly(), $iv,
+        return new EncryptedEntity(new Buffer($encrypted), $iv,
             isset($tag) ? new Bytes16($tag) : null);
     }
 
@@ -148,7 +136,7 @@ class Cipher
         ?CipherMode $mode = null,
         bool        $zeroPadding = false,
         bool        $plainString = false
-    ): Buffer
+    ): BufferImmutable
     {
         return $this->encrypt($value, $mode, $zeroPadding, $plainString)
             ->serialize();
@@ -158,13 +146,13 @@ class Cipher
      * @throws CipherException
      */
     public function decrypt(
-        AbstractByteArray $encrypted,
-        Bytes16           $iv,
-        ?Bytes16          $tag = null,
-        ?CipherMode       $mode = null,
-        bool              $zeroPadding = false,
-        bool              $plainString = false,
-        ?array            $allowedClasses = null,
+        ReadableBufferInterface $encrypted,
+        Bytes16                 $iv,
+        ?Bytes16                $tag = null,
+        ?CipherMode             $mode = null,
+        bool                    $zeroPadding = false,
+        bool                    $plainString = false,
+        ?array                  $allowedClasses = null,
     ): mixed
     {
         $options = $zeroPadding ? OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING : OPENSSL_RAW_DATA;
@@ -174,12 +162,12 @@ class Cipher
         }
 
         $decrypted = openssl_decrypt(
-            $encrypted->raw(),
+            $encrypted->bytes(),
             $mode->getCipherAlgo($this->bitLen),
             $this->entropy,
             $options,
-            $iv->raw(),
-            $tag?->raw(),
+            $iv->bytes(),
+            $tag?->bytes(),
         );
         if (!$decrypted) {
             throw new CipherException(CipherError::DECRYPTION_OP_FAIL);
@@ -201,7 +189,7 @@ class Cipher
      * @throws CipherException
      */
     public function decryptSerialized(
-        AbstractByteArray|EncryptedEntity $buffer,
+        ReadableBufferInterface|EncryptedEntity $buffer,
         ?CipherMode                       $mode = null,
         bool                              $zeroPadding = false,
         bool                              $plainString = false,
@@ -217,50 +205,13 @@ class Cipher
             $mode, $zeroPadding, $plainString, $allowedClasses);
     }
 
-    /**
-     * @throws CipherException
-     */
-    public function hmac(string $algo, string|AbstractByteArray $data): AbstractByteArray
-    {
-        try {
-            return $this->digestResultFrame(
-                $algo,
-                hash_hmac($algo, $data instanceof AbstractByteArray ?
-                    $data->raw() : $data, $this->entropy, true)
-            );
-        } catch (\Exception) {
-            throw new CipherException(CipherError::HMAC_COMPUTE_FAIL);
-        }
-    }
-
-    /**
-     * @throws CipherException
-     */
-    public function pbkdf2(string $algo, string|AbstractByteArray $data, int $iterations): AbstractByteArray
-    {
-        try {
-            return $this->digestResultFrame(
-                $algo,
-                hash_pbkdf2(
-                    $algo,
-                    $data instanceof AbstractByteArray ? $data->raw() : $data,
-                    $this->entropy,
-                    $iterations,
-                    0,
-                    true
-                )
-            );
-        } catch (\Exception) {
-            throw new CipherException(CipherError::PBKDF2_COMPUTE_FAIL);
-        }
-    }
 
     /**
      * @param string $algo
      * @param string $raw
-     * @return AbstractByteArray
+     * @return ReadableBufferInterface
      */
-    private function digestResultFrame(string $algo, string $raw): AbstractByteArray
+    private function digestResultFrame(string $algo, string $raw): ReadableBufferInterface
     {
         $class = match (strtolower($algo)) {
             "md5" => Bytes16::class,

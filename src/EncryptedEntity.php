@@ -8,30 +8,31 @@ declare(strict_types=1);
 
 namespace Charcoal\Cipher;
 
-use Charcoal\Buffers\AbstractByteArray;
 use Charcoal\Buffers\Buffer;
-use Charcoal\Buffers\Frames\Bytes16;
+use Charcoal\Buffers\BufferImmutable;
+use Charcoal\Buffers\Types\Bytes16;
 use Charcoal\Cipher\Exceptions\CipherError;
 use Charcoal\Cipher\Exceptions\CipherException;
+use Charcoal\Contracts\Buffers\ReadableBufferInterface;
 
 /**
  * Class Encrypted
  * @package Charcoal\Cipher
  */
-readonly class EncryptedEntity
+readonly class EncryptedEntity implements EncryptedEntityInterface
 {
     /**
-     * @param AbstractByteArray $buffer [IV][Ciphertext][Authentication Tag]
+     * @param ReadableBufferInterface $buffer [IV][Ciphertext][Authentication Tag]
      * @param bool $hasTag
      * @return static
      * @throws CipherException
      */
-    public static function Unserialize(AbstractByteArray $buffer, bool $hasTag): static
+    public static function Unserialize(ReadableBufferInterface $buffer, bool $hasTag): static
     {
         try {
             $buffer = $buffer->read();
             $iv = new Bytes16($buffer->first(16));
-            $encrypted = new Buffer($buffer->next($hasTag ? $buffer->bytesLeft() - 16 : $buffer->bytesLeft()));
+            $encrypted = new Buffer($buffer->next($hasTag ? $buffer->remaining() - 16 : $buffer->remaining()));
             if ($hasTag) {
                 $tag = new Bytes16($buffer->next(16));
             }
@@ -57,11 +58,11 @@ readonly class EncryptedEntity
 
     /**
      * [IV][Ciphertext][Authentication Tag]
-     * @return \Charcoal\Buffers\Buffer
+     * @return \Charcoal\Buffers\BufferImmutable
      */
-    public function serialize(): Buffer
+    public function serialize(): BufferImmutable
     {
-        return $this->bytes->copy()->prepend($this->iv)->append($this->tag)->readOnly();
+        return $this->bytes->copy()->prepend($this->iv)->append($this->tag)->toImmutable();
     }
 }
 
