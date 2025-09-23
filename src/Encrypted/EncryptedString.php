@@ -109,11 +109,11 @@ readonly class EncryptedString implements EncryptedStringInterface
     {
         $dto = $this->encodeDto($encoding, "algo", "cipherText", "iv", "tag", "keyRef");
         return strtr($tpl, [
-            "{algo}"       => $dto["algo"] ?? "",
+            "{algo}" => $dto["algo"] ?? "",
             "{cipherText}" => $dto["cipherText"] ?? "",
-            "{iv}"         => $dto["iv"] ?? "",
-            "{tag}"        => $dto["tag"] ?? "",
-            "{keyRef}"     => $dto["keyRef"] ?? "",
+            "{iv}" => $dto["iv"] ?? "",
+            "{tag}" => $dto["tag"] ?? "",
+            "{keyRef}" => $dto["keyRef"] ?? "",
         ]);
     }
 }
