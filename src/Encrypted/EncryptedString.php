@@ -11,7 +11,6 @@ namespace Charcoal\Cipher\Encrypted;
 use Charcoal\Contracts\Encoding\EncodingSchemeStaticInterface;
 use Charcoal\Contracts\Security\Cipher\CipherAlgorithmInterface;
 use Charcoal\Contracts\Security\Encrypted\EncryptedStringInterface;
-use Charcoal\Contracts\Security\Secrets\SecretKeyInterface;
 
 /**
  * Represents an encrypted string, containing the ciphertext, initialization vector,
@@ -21,21 +20,32 @@ use Charcoal\Contracts\Security\Secrets\SecretKeyInterface;
  */
 readonly class EncryptedString implements EncryptedStringInterface
 {
-    private ?string $keyRef;
-
     public function __construct(
         private CipherAlgorithmInterface $algo,
         private string                   $ciphertext,
         private string                   $iv,
         private ?string                  $tag,
-        null|SecretKeyInterface|string   $keyRef,
+        private ?string                  $ref,
+        private ?int                     $version,
+        private ?string                  $keyRef,
     )
     {
-        $this->keyRef = match (true) {
-            $keyRef instanceof SecretKeyInterface => $keyRef->ref(),
-            is_string($keyRef) => $keyRef,
-            default => null,
-        };
+    }
+
+    /**
+     * Returns the reference of the encrypted string.
+     */
+    public function ref(): ?string
+    {
+        return $this->ref;
+    }
+
+    /**
+     * Returns the version of the encrypted string.
+     */
+    public function version(): ?int
+    {
+        return $this->version;
     }
 
     /**
@@ -49,7 +59,7 @@ readonly class EncryptedString implements EncryptedStringInterface
     /**
      * Returns the key reference.
      */
-    public function kid(): string
+    public function kid(): ?string
     {
         return $this->keyRef;
     }
@@ -87,6 +97,8 @@ readonly class EncryptedString implements EncryptedStringInterface
         string                        $cipherText = "ciphertext",
         string                        $iv = "iv",
         ?string                       $tag = "tag",
+        ?string                       $ref = "ref",
+        ?string                       $version = "version",
         ?string                       $keyRef = null
     ): array
     {
@@ -94,8 +106,11 @@ readonly class EncryptedString implements EncryptedStringInterface
         $dto[$algo] = $this->algo->algo();
         $dto[$cipherText] = $encoding->encode($this->ciphertext);
         $dto[$iv] = $encoding->encode($this->iv);
-        $dto[$tag] = is_null($this->tag) ? null : $encoding->encode($this->tag);
-        $dto[$keyRef] = $this->keyRef;
+
+        if ($tag) $dto[$tag] = is_null($this->tag) ? null : $encoding->encode($this->tag);
+        if ($ref) $dto[$ref] = $this->ref;
+        if ($version) $dto[$version] = $this->version;
+        if ($keyRef) $dto[$keyRef] = $this->keyRef;
         return $dto;
     }
 
@@ -107,12 +122,14 @@ readonly class EncryptedString implements EncryptedStringInterface
         string                        $tpl = "{algo}{iv}{tag}{cipherText}{keyRef}"
     ): string
     {
-        $dto = $this->encodeDto($encoding, "algo", "cipherText", "iv", "tag", "keyRef");
+        $dto = $this->encodeDto($encoding, "algo", "cipherText", "iv", "tag", "ref", "version", "keyRef");
         return strtr($tpl, [
             "{algo}" => $dto["algo"] ?? "",
             "{cipherText}" => $dto["cipherText"] ?? "",
             "{iv}" => $dto["iv"] ?? "",
             "{tag}" => $dto["tag"] ?? "",
+            "{ref}" => $dto["ref"] ?? "",
+            "{version}" => $dto["version"] ?? "",
             "{keyRef}" => $dto["keyRef"] ?? "",
         ]);
     }
