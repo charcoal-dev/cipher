@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\Cipher\Tests\Fixture;
+namespace Charcoal\Cipher\Tests\Fixtures;
 
 class CustomUserEntity
 {

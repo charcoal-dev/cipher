@@ -66,14 +66,6 @@ final readonly class EncryptionEnvelope implements CipherEnvelopeInterface
     ): EncryptedString
     {
         return $this->objectFqcn ?
-            new EncryptedString(
-                $this->algo,
-                $cipherText,
-                $this->ivBytes,
-                $tagBytes,
-                $this->ref,
-                $this->version,
-                $keyRef) :
             new EncryptedObject(
                 $this->algo,
                 $cipherText,
@@ -83,7 +75,15 @@ final readonly class EncryptionEnvelope implements CipherEnvelopeInterface
                 $this->version,
                 $keyRef,
                 $this->objectFqcn
-            );
+            )
+            : new EncryptedString(
+                $this->algo,
+                $cipherText,
+                $this->ivBytes,
+                $tagBytes,
+                $this->ref,
+                $this->version,
+                $keyRef);
     }
 
     /**

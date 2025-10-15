@@ -25,9 +25,9 @@ readonly class EncryptedString implements EncryptedStringInterface
         private string                   $ciphertext,
         private string                   $iv,
         private ?string                  $tag,
-        private ?string                  $ref,
-        private ?int                     $version,
-        private ?string                  $keyRef,
+        private ?string                  $ref = null,
+        private ?int                     $version = null,
+        private ?string                  $keyRef = null,
     )
     {
     }
