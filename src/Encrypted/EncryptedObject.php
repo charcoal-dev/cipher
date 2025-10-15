@@ -23,10 +23,10 @@ readonly class EncryptedObject extends EncryptedString implements EncryptedObjec
         string                   $ciphertext,
         string                   $iv,
         ?string                  $tag,
-        ?string                  $ref,
-        ?int                     $version,
-        ?string                  $keyRef,
-        private ?string          $fqcn,
+        ?string                  $ref = null,
+        ?int                     $version = null,
+        ?string                  $keyRef = null,
+        private ?string          $fqcn = null,
     )
     {
         parent::__construct($algo, $ciphertext, $iv, $tag, $ref, $version, $keyRef);
