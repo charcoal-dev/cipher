@@ -25,6 +25,7 @@ trait EncryptionTrait
      * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function encrypt(
+        #[\SensitiveParameter]
         SecretKeyInterface       $key,
         string|object            $entity,
         ?string                  $ref = null,

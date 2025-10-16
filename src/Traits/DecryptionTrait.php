@@ -27,6 +27,7 @@ trait DecryptionTrait
      * @throws CipherException
      */
     public function decrypt(
+        #[\SensitiveParameter]
         SecretKeyInterface       $key,
         EncryptedStringInterface $encrypted,
         ?CipherProviderInterface $provider = null,

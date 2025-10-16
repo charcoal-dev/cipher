@@ -42,6 +42,7 @@ final class OpenSSL extends AbstractCipherProvider
      * @throws \Charcoal\Cipher\Exceptions\CipherException
      */
     public function encrypt(
+        #[\SensitiveParameter]
         SecretKeyInterface      $key,
         CipherEnvelopeInterface $envelope
     ): EncryptedStringInterface
@@ -74,6 +75,7 @@ final class OpenSSL extends AbstractCipherProvider
      * @throws CipherException
      */
     public function decrypt(
+        #[\SensitiveParameter]
         SecretKeyInterface       $key,
         EncryptedStringInterface $encrypted
     ): string
@@ -123,6 +125,7 @@ final class OpenSSL extends AbstractCipherProvider
      */
     protected function encryptFromOpenSSL(
         string $algo,
+        #[\SensitiveParameter]
         string $key,
         string $payload,
         string $iv,
@@ -147,6 +150,7 @@ final class OpenSSL extends AbstractCipherProvider
      */
     protected function decryptFromOpenSSL(
         string  $algo,
+        #[\SensitiveParameter]
         string  $key,
         string  $ciphertext,
         string  $iv,
