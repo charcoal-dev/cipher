@@ -23,4 +23,18 @@ final readonly class CipherKeyRef
     )
     {
     }
+
+    public function __serialize(): array
+    {
+        return [
+            "algo" => $this->algo,
+            "kid" => $this->kid->ref()
+        ];
+    }
+
+    public function __unserialize(array $data): void
+    {
+        $this->algo = $data["algo"];
+        $this->kid = $data["kid"];
+    }
 }
