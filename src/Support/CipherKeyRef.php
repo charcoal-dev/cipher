@@ -13,6 +13,7 @@ use Charcoal\Contracts\Security\Secrets\SecretKeyInterface;
 
 /**
  * Simple VO for cipher algo + security key reference.
+ * @api
  */
 final readonly class CipherKeyRef
 {
