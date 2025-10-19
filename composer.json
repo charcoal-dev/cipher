@@ -16,7 +16,7 @@
     "php": "^8.3",
     "ext-openssl": "*",
     "charcoal-dev/contracts-security": "^0.1.0",
-    "charcoal-dev/secrets-kms": "^0.1.1"
+    "charcoal-dev/secrets-kms": "^0.1.8"
   },
   "autoload": {
     "psr-4": {

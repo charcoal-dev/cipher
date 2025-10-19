@@ -10,6 +10,7 @@ namespace Charcoal\Cipher\Support;
 
 use Charcoal\Cipher\Cipher;
 use Charcoal\Contracts\Security\Secrets\SecretKeyInterface;
+use Charcoal\Security\Secrets\Support\SecretKeyRef;
 
 /**
  * Simple VO for cipher algo + security key reference.
@@ -18,8 +19,8 @@ use Charcoal\Contracts\Security\Secrets\SecretKeyInterface;
 final readonly class CipherKeyRef
 {
     public function __construct(
-        public Cipher                    $algo,
-        public string|SecretKeyInterface $kid
+        public Cipher                          $algo,
+        public SecretKeyRef|SecretKeyInterface $kid
     )
     {
     }
@@ -28,7 +29,8 @@ final readonly class CipherKeyRef
     {
         return [
             "algo" => $this->algo,
-            "kid" => $this->kid->ref()
+            "kid" => $this->kid instanceof SecretKeyInterface ?
+                new SecretKeyRef($this->kid->id(), $this->kid->version(), false) : $this->kid
         ];
     }
 
