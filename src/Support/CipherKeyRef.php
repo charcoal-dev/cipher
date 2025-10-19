@@ -25,15 +25,31 @@ final readonly class CipherKeyRef
     {
     }
 
+    /**
+     * Returns new instance of self with $kid prop altered.
+     * @api
+     */
+    public function withSecretKey(SecretKeyRef|SecretKeyInterface $kid): self
+    {
+        return new self($this->algo, $kid);
+    }
+
+    /**
+     * @return array
+     */
     public function __serialize(): array
     {
         return [
             "algo" => $this->algo,
             "kid" => $this->kid instanceof SecretKeyInterface ?
-                new SecretKeyRef($this->kid->id(), $this->kid->version(), false) : $this->kid
+                new SecretKeyRef($this->kid->id(), $this->kid->version(), $this->kid->namespace, false) : $this->kid
         ];
     }
 
+    /**
+     * @param array $data
+     * @return void
+     */
     public function __unserialize(array $data): void
     {
         $this->algo = $data["algo"];
