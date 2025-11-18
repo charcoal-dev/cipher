@@ -28,6 +28,7 @@ trait EncryptionTrait
         #[\SensitiveParameter]
         SecretKeyInterface       $key,
         string|object            $entity,
+        ?string                  $aad = null,
         ?string                  $ref = null,
         int                      $version = 0,
         ?CipherProviderInterface $provider = null,
@@ -35,6 +36,6 @@ trait EncryptionTrait
     {
         $provider = $provider ?? OpenSSL::getInstance();
         $envelope = new EncryptionEnvelope($this, $entity, $ref, $version);
-        return $provider->encrypt($key, $envelope);
+        return $provider->encrypt($key, $envelope, $aad);
     }
 }

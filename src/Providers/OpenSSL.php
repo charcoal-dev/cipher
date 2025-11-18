@@ -44,7 +44,8 @@ final class OpenSSL extends AbstractCipherProvider
     public function encrypt(
         #[\SensitiveParameter]
         SecretKeyInterface      $key,
-        CipherEnvelopeInterface $envelope
+        CipherEnvelopeInterface $envelope,
+        ?string                 $aad = null
     ): EncryptedStringInterface
     {
         if (!$envelope->payload()) {
@@ -57,13 +58,14 @@ final class OpenSSL extends AbstractCipherProvider
 
         /** @var EncryptionResult $encrypted */
         $encrypted = $key->useSecretEntropy(
-            function (string $key) use ($algo, $envelope) {
+            function (string $key) use ($algo, $envelope, $aad) {
                 return $this->encryptFromOpenSSL(
                     $algo->algo(),
                     $key,
                     $envelope->payload(),
                     $envelope->iv(),
-                    min($algo->tagLength() ?? 0, 16)
+                    min($algo->tagLength() ?? 0, 16),
+                    $aad
                 );
             },
         );
@@ -77,7 +79,8 @@ final class OpenSSL extends AbstractCipherProvider
     public function decrypt(
         #[\SensitiveParameter]
         SecretKeyInterface       $key,
-        EncryptedStringInterface $encrypted
+        EncryptedStringInterface $encrypted,
+        ?string                  $aad = null
     ): string
     {
         if (!$encrypted->ciphertext()) {
@@ -93,13 +96,14 @@ final class OpenSSL extends AbstractCipherProvider
         }
 
         return $key->useSecretEntropy(
-            function (string $key) use ($algo, $encrypted) {
+            function (string $key) use ($algo, $encrypted, $aad) {
                 return $this->decryptFromOpenSSL(
                     $algo->algo(),
                     $key,
                     $encrypted->ciphertext(),
                     $encrypted->iv(),
-                    $encrypted->tag()
+                    $encrypted->tag(),
+                    $aad
                 );
             },
         );
@@ -124,17 +128,18 @@ final class OpenSSL extends AbstractCipherProvider
      * @throws CipherException
      */
     protected function encryptFromOpenSSL(
-        string $algo,
+        string  $algo,
         #[\SensitiveParameter]
-        string $key,
-        string $payload,
-        string $iv,
-        int    $tagLength
+        string  $key,
+        string  $payload,
+        string  $iv,
+        int     $tagLength,
+        ?string $aad
     ): EncryptionResult
     {
         $tag = null;
         error_clear_last();
-        $ct = @openssl_encrypt($payload, $algo, $key, OPENSSL_RAW_DATA, $iv, $tag, tag_length: $tagLength ?: 16);
+        $ct = @openssl_encrypt($payload, $algo, $key, OPENSSL_RAW_DATA, $iv, $tag, $aad ?: "", $tagLength ?: 16);
         if (!$ct) {
             throw new CipherException(CipherError::ENCRYPTION_OP_FAIL,
                 "OpenSSL encryption failed: " . openssl_error_string(),
@@ -155,10 +160,11 @@ final class OpenSSL extends AbstractCipherProvider
         string  $ciphertext,
         string  $iv,
         ?string $tag,
+        ?string $aad,
     ): string
     {
         error_clear_last();
-        $payload = @openssl_decrypt($ciphertext, $algo, $key, OPENSSL_RAW_DATA, $iv, $tag);
+        $payload = @openssl_decrypt($ciphertext, $algo, $key, OPENSSL_RAW_DATA, $iv, $tag, $aad ?: "");
         if (!$payload) {
             throw new CipherException(CipherError::DECRYPTION_OP_FAIL,
                 "OpenSSL decryption failed: " . openssl_error_string(),

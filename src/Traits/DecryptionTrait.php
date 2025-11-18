@@ -30,6 +30,7 @@ trait DecryptionTrait
         #[\SensitiveParameter]
         SecretKeyInterface       $key,
         EncryptedStringInterface $encrypted,
+        ?string                  $aad = null,
         ?CipherProviderInterface $provider = null,
         ?array                   $unserializeAllowedFqcn = []
     ): string|object
@@ -43,7 +44,7 @@ trait DecryptionTrait
         }
 
         $provider = $provider ?? OpenSSL::getInstance();
-        $payload = $provider->decrypt($key, $encrypted);
+        $payload = $provider->decrypt($key, $encrypted, $aad);
         if ($encrypted instanceof EncryptedObjectInterface || $unserializeAllowedFqcn) {
             return unserialize($payload, $unserializeAllowedFqcn ?
                 ["allowed_classes" => $unserializeAllowedFqcn] : []);
