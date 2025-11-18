@@ -29,6 +29,7 @@ class CipherTest extends TestCase
     {
         $stringOne = "This is a test string!";
         $stringTwo = "\0This is another test string!\t\n";
+        $stringThree = "\0One more with Additional Authenticated Data!\r\n";
 
         $secrets = new SecretsDirectory(LfsSecrets::Tests);
         $key = $secrets->load("test_secret", 1);
@@ -48,6 +49,14 @@ class CipherTest extends TestCase
         $this->assertEquals(strlen($encryptedTwo->ciphertext()), strlen($stringTwo));
         $decryptedTwo = Cipher::AES_256_GCM->decrypt($key, $encryptedTwo);
         $this->assertEquals($stringTwo, $decryptedTwo);
+
+        $encryptedThree = Cipher::AES_256_GCM->encrypt($key, $stringThree, aad: "some_aad3");
+        $this->assertInstanceOf(EncryptedString::class, $encryptedThree);
+        $this->assertEquals(12, strlen($encryptedThree->iv()));
+        $this->assertEquals(16, strlen($encryptedThree->tag() ?? ""));
+        $this->assertEquals(strlen($encryptedThree->ciphertext()), strlen($stringThree));
+        $decryptedThree = Cipher::AES_256_GCM->decrypt($key, $encryptedThree, aad: "some_aad3");
+        $this->assertEquals($stringThree, $decryptedThree);
     }
 
     /**
